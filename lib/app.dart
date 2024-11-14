@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
 import 'package:task_manager/controller_binder.dart';
+import 'package:task_manager/ui/screen/add_new_task_screen.dart';
 import 'package:task_manager/ui/screen/main_bottom_nab_bar_screen.dart';
 import 'package:task_manager/ui/screen/splash_screen.dart';
 import 'package:task_manager/ui/utils/app_colors.dart';
@@ -30,6 +31,7 @@ class _TaskManagerAppState extends State<TaskManagerApp> {
       routes: {
         SplashScreen.name :(context)   => const SplashScreen(),
         MainBottomNabBarScreen.name : (context) => const MainBottomNabBarScreen(),
+        '/addNew' : (context) => const AddNewTaskScreen(),
       },
     );
   }

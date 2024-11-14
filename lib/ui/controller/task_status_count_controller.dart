@@ -1,36 +1,32 @@
 import 'package:get/get.dart';
-import 'package:task_manager/data/models/task_model.dart';
 
 import '../../data/models/network_response.dart';
-import '../../data/models/task_list_model.dart';
+import '../../data/models/task_status_count_model.dart';
+import '../../data/models/task_status_model.dart';
 import '../../data/services/network_caller.dart';
 import '../../data/utils/urls.dart';
 
-class NewTaskListController extends GetxController{
+class TaskStatusCountController extends GetxController{
 
   bool _inProgress = false;
-
   String? _errorMessage;
-
-  List<TaskModel> _taskList = [];
+  List<TaskStatusModel> _taskStatusCountList = [];
 
   bool get inProgress => _inProgress;
-
   String? get errorMessage => _errorMessage;
+  List<TaskStatusModel> get taskStatusCountList => _taskStatusCountList;
 
-
-  List<TaskModel> get taskList => _taskList;
-
-  Future<bool> getNewTaskList() async {
+  Future<bool> getTaskStatusCountList() async {
     bool isSuccess = false;
     _inProgress = true;
     update();
+
     final NetworkResponse response = await NetworkCaller.getRequest(
-      url: Urls.newTaskList,
+      url: Urls.taskStatusCount,
     );
     if (response.isSuccess) {
-      final TaskListModel taskListModel = TaskListModel.fromJson(response.responseData);
-      _taskList = taskListModel.taskList ?? [];
+      final TaskStatusCountModel taskStatusCountModel = TaskStatusCountModel.fromJson(response.responseData);
+      _taskStatusCountList = taskStatusCountModel.taskStatusCountList ?? [];
       isSuccess = true;
     } else {
       _errorMessage = response.errorMessage;
@@ -39,7 +35,9 @@ class NewTaskListController extends GetxController{
     update();
 
     return isSuccess;
+
   }
+
 
 
 }

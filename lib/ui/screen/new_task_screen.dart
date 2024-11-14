@@ -1,14 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:task_manager/data/models/network_response.dart';
-import 'package:task_manager/data/models/task_list_model.dart';
-import 'package:task_manager/data/models/task_model.dart';
-import 'package:task_manager/data/models/task_status_count_model.dart';
 import 'package:task_manager/data/models/task_status_model.dart';
-import 'package:task_manager/data/services/network_caller.dart';
-import 'package:task_manager/data/utils/urls.dart';
 import 'package:task_manager/ui/controller/new_task_list_controller.dart';
+import 'package:task_manager/ui/controller/task_status_count_controller.dart';
 import 'package:task_manager/ui/screen/add_new_task_screen.dart';
 import 'package:task_manager/ui/widgets/center_circular_progress_indicator.dart';
 import 'package:task_manager/ui/widgets/snack_bar_message.dart';
@@ -24,10 +18,8 @@ class NewTaskScreen extends StatefulWidget {
 
 class _NewTaskScreenState extends State<NewTaskScreen> {
 
-  bool _getTaskStatusCountListInProgress = false;
-  List<TaskStatusModel> _taskStatusCountList = [];
-
   final NewTaskListController _newTaskListController = Get.find<NewTaskListController>();
+  final TaskStatusCountController _taskStatusCountController = Get.find<TaskStatusCountController>();
 
   @override
   void initState() {
@@ -82,34 +74,39 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
   Widget buildSummerySection() {
     return  Padding(
       padding: const EdgeInsets.all(8.0),
-      child: Visibility(
-        visible: _getTaskStatusCountListInProgress == false,
-        replacement: const CenterCircularProgressIndicator(),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: _getTaskSummeryCardList(),
-          ),
-        ),
+      child: GetBuilder<TaskStatusCountController>(
+        builder: (controller) {
+          return Visibility(
+            visible: !controller.inProgress,
+            replacement: const CenterCircularProgressIndicator(),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: _getTaskSummeryCardList(),
+              ),
+            ),
+          );
+        }
       ),
     );
   }
 
   List<TaskSummeryCard> _getTaskSummeryCardList(){
     List<TaskSummeryCard> taskSummeryCardList =[];
-    for(TaskStatusModel t in _taskStatusCountList){
+    for(TaskStatusModel t in _taskStatusCountController.taskStatusCountList){
       taskSummeryCardList.add(TaskSummeryCard(title: t.sId!, count: t.sum ?? 0));
     }
     return taskSummeryCardList;
   }
 
   void _onTapAddFAB() async{
-    final bool? shouldRefresh = await Navigator.push(
-      context,
-      MaterialPageRoute(
+     final bool? shouldRefresh = await
+     Navigator.push(
+     context,
+     MaterialPageRoute(
         builder: (context) => const AddNewTaskScreen(),
-      ),
-    );
+    ),
+     );
     if(shouldRefresh == true){
       _getNewTaskList();
     }
@@ -124,20 +121,10 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
   }
 
   Future<void> _getTaskStatusCount() async {
-    _taskStatusCountList.clear();// for avoid Append the list
-    _getTaskStatusCountListInProgress = true;
-    setState(() {});
-    final NetworkResponse response = await NetworkCaller.getRequest(
-      url: Urls.taskStatusCount,
-    );
-    if (response.isSuccess) {
-      final TaskStatusCountModel taskStatusCountModel = TaskStatusCountModel.fromJson(response.responseData);
-      _taskStatusCountList = taskStatusCountModel.taskStatusCountList ?? [];
-    } else {
-      showSnackBarMessage(context, response.errorMessage,true,);
+    final bool result = await _taskStatusCountController.getTaskStatusCountList();
+    if (result == false) {
+     showSnackBarMessage(context, _taskStatusCountController.errorMessage!, true);
     }
-    _getTaskStatusCountListInProgress = false;
-    setState(() {});
   }
 
 }

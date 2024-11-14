@@ -5,6 +5,7 @@ import 'package:task_manager/ui/screen/main_bottom_nab_bar_screen.dart';
 import 'package:task_manager/ui/screen/sign_in_screen.dart';
 import 'package:task_manager/ui/utils/assets_path.dart';
 import '../widgets/screen_background.dart';
+import 'package:get/get.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -27,15 +28,17 @@ class _SplashScreenState extends State<SplashScreen> {
     await AuthController.getAccessToken();
     if (AuthController.isLoggedIn()) {
       await AuthController.getUserData();
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (contxt) => const MainBottomNabBarScreen()),
-      );
+      Get.offAllNamed(MainBottomNabBarScreen.name);
+      // Navigator.pushReplacement(
+      //   context,
+      //   MaterialPageRoute(builder: (contxt) => const MainBottomNabBarScreen()),
+      // );
     } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (contxt) => const SignInScreen()),
-      );
+      Get.offAllNamed(SignInScreen.name);
+      // Navigator.pushReplacement(
+      //   context,
+      //   MaterialPageRoute(builder: (contxt) => const SignInScreen()),
+      // );
     }
   }
 
