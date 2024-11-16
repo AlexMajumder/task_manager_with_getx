@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:task_manager/data/models/network_response.dart';
 import 'package:task_manager/data/models/task_model.dart';
 import 'package:task_manager/data/services/network_caller.dart';
 import 'package:task_manager/data/utils/urls.dart';
+import 'package:task_manager/ui/controller/change_status_controller.dart';
+import 'package:task_manager/ui/controller/delete_status_controller.dart';
 import 'package:task_manager/ui/widgets/center_circular_progress_indicator.dart';
 import 'package:task_manager/ui/widgets/snack_bar_message.dart';
 import '../utils/app_colors.dart';
@@ -23,12 +27,13 @@ class TaskCard extends StatefulWidget {
 
 class _TaskCardState extends State<TaskCard> {
   String _selectedStatus = '';
-  bool _changeStatusInProgress = false;
-  bool _deleteStatusInProgress = false;
+  final ChangeStatusController _changeStatusController =
+      Get.find<ChangeStatusController>();
+  final DeleteStatusController _deleteStatusController =
+      Get.find<DeleteStatusController>();
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     _selectedStatus = widget.taskModel.status!;
   }
@@ -62,22 +67,26 @@ class _TaskCardState extends State<TaskCard> {
                 buildTaskStatusChip(),
                 Wrap(
                   children: [
-                    Visibility(
-                      visible: _changeStatusInProgress == false,
-                      replacement: const CenterCircularProgressIndicator(),
-                      child: IconButton(
-                        onPressed: _onTapEditButton,
-                        icon: const Icon(Icons.edit),
-                      ),
-                    ),
-                    Visibility(
-                      visible: _deleteStatusInProgress == false,
-                      replacement: const CenterCircularProgressIndicator(),
-                      child: IconButton(
-                        onPressed: _onTapDeleteButton,
-                        icon: const Icon(Icons.delete),
-                      ),
-                    ),
+                    GetBuilder<ChangeStatusController>(builder: (controller) {
+                      return Visibility(
+                        visible: !controller.inProgress,
+                        replacement: const CenterCircularProgressIndicator(),
+                        child: IconButton(
+                          onPressed: _onTapEditButton,
+                          icon: const Icon(Icons.edit),
+                        ),
+                      );
+                    }),
+                    GetBuilder<DeleteStatusController>(builder: (controller) {
+                      return Visibility(
+                        visible: !controller.inProgress,
+                        replacement: const CenterCircularProgressIndicator(),
+                        child: IconButton(
+                          onPressed: _onTapDeleteButton,
+                          icon: const Icon(Icons.delete),
+                        ),
+                      );
+                    }),
                   ],
                 )
               ],
@@ -121,27 +130,9 @@ class _TaskCardState extends State<TaskCard> {
         });
   }
 
-  Future<void> _onTapDeleteButton() async {
-
-    _deleteStatusInProgress = true;
-    setState(() {});
-    final NetworkResponse response = await NetworkCaller.getRequest(
-      url: Urls.deleteTask(widget.taskModel.sId!),
-    );
-    if (response.isSuccess) {
-      widget.onRefreshList();
-    } else {
-      _deleteStatusInProgress = false;
-      setState(() {});
-      showSnackBarMessage(context, response.errorMessage, true);
-    }
-
-
-  }
-
   Widget buildTaskStatusChip() {
     return Chip(
-      label:  Text(
+      label: Text(
         widget.taskModel.status!,
         style: const TextStyle(
           fontSize: 12,
@@ -154,17 +145,23 @@ class _TaskCardState extends State<TaskCard> {
   }
 
   Future<void> _changeStatus(String newStatus) async {
-    _changeStatusInProgress = true;
-    setState(() {});
-    final NetworkResponse response = await NetworkCaller.getRequest(
-      url: Urls.changeStatus(widget.taskModel.sId!, newStatus),
-    );
-    if (response.isSuccess) {
+    final bool result = await _changeStatusController.changeStatus(
+        widget.taskModel.sId!, newStatus);
+
+    if (result) {
       widget.onRefreshList();
     } else {
-      _changeStatusInProgress = false;
-      setState(() {});
-      showSnackBarMessage(context, response.errorMessage, true);
+      showSnackBarMessage(context, _changeStatusController.errorMessage!, true);
+    }
+  }
+
+  Future<void> _onTapDeleteButton() async {
+    final bool result =
+        await _deleteStatusController.deleteStatus(widget.taskModel.sId!);
+    if (result) {
+      widget.onRefreshList();
+    } else {
+      showSnackBarMessage(context, _deleteStatusController.errorMessage!, true);
     }
   }
 }

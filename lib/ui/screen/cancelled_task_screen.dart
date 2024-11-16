@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../data/models/network_response.dart';
-import '../../data/models/task_list_model.dart';
-import '../../data/models/task_model.dart';
-import '../../data/services/network_caller.dart';
-import '../../data/utils/urls.dart';
+import 'package:get/get.dart';
+import 'package:task_manager/ui/controller/cancelled_task_list_controller.dart';
 import '../widgets/center_circular_progress_indicator.dart';
 import '../widgets/snack_bar_message.dart';
 import '../widgets/task_card.dart';
@@ -16,8 +13,8 @@ class CancelledTaskScreen extends StatefulWidget {
 }
 
 class _CancelledTaskScreenState extends State<CancelledTaskScreen> {
-  bool _getCancelledTaskListInProgress = false;
-  List<TaskModel> _cancelledTaskList = [];
+  final CancelledTaskListController _cancelledTaskListController =
+      Get.find<CancelledTaskListController>();
 
   @override
   void initState() {
@@ -27,50 +24,43 @@ class _CancelledTaskScreenState extends State<CancelledTaskScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Visibility(
-      visible: !_getCancelledTaskListInProgress,
-      replacement: const CenterCircularProgressIndicator(),
-      child: RefreshIndicator(
-        onRefresh: () async {
-          _getCancelledTaskList();
-        },
-        child: ListView.separated(
-          itemCount: _cancelledTaskList.length,
-          itemBuilder: (context, index) {
-            return TaskCard(
-              taskModel: _cancelledTaskList[index],
-              onRefreshList: () {
-                _getCancelledTaskList();
-              },
-            );
+    return GetBuilder<CancelledTaskListController>(builder: (controller) {
+      return Visibility(
+        visible: !controller.inProgress,
+        replacement: const CenterCircularProgressIndicator(),
+        child: RefreshIndicator(
+          onRefresh: () async {
+            _getCancelledTaskList();
           },
-          separatorBuilder: (context, index) {
-            return const SizedBox(height: 8);
-          },
+          child: ListView.separated(
+            itemCount: _cancelledTaskListController.taskList.length,
+            itemBuilder: (context, index) {
+              return TaskCard(
+                taskModel: _cancelledTaskListController.taskList[index],
+                onRefreshList: () {
+                  _getCancelledTaskList();
+                },
+              );
+            },
+            separatorBuilder: (context, index) {
+              return const SizedBox(height: 8);
+            },
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   Future<void> _getCancelledTaskList() async {
-    _cancelledTaskList.clear(); // for avoid Append the list
-    _getCancelledTaskListInProgress = true;
-    setState(() {});
-    final NetworkResponse response = await NetworkCaller.getRequest(
-      url: Urls.cancelledTaskList,
-    );
-    if (response.isSuccess) {
-      final TaskListModel taskListModel =
-          TaskListModel.fromJson(response.responseData);
-      _cancelledTaskList = taskListModel.taskList ?? [];
-    } else {
+    final bool result =
+        await _cancelledTaskListController.getCancelledTaskList();
+
+    if (result == false) {
       showSnackBarMessage(
         context,
-        response.errorMessage,
+        _cancelledTaskListController.errorMessage!,
         true,
       );
     }
-    _getCancelledTaskListInProgress = false;
-    setState(() {});
   }
 }

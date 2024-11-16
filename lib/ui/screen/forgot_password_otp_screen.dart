@@ -1,9 +1,9 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
-import 'package:task_manager/data/models/network_response.dart';
-import 'package:task_manager/data/services/network_caller.dart';
-import 'package:task_manager/data/utils/urls.dart';
+import 'package:task_manager/ui/controller/forgot_password_otp_controller.dart';
 import 'package:task_manager/ui/screen/reset_password_screen.dart';
 import 'package:task_manager/ui/screen/sign_in_screen.dart';
 import 'package:task_manager/ui/utils/app_colors.dart';
@@ -22,9 +22,10 @@ class ForgotPasswordOtpScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordOtpScreenState extends State<ForgotPasswordOtpScreen> {
-  bool _otpScreenInProgress = false;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _otpTEController = TextEditingController();
+  final ForgotPasswordOtpController _forGotPasswordOtpController =
+      Get.find<ForgotPasswordOtpController>();
 
   @override
   Widget build(BuildContext context) {
@@ -107,14 +108,16 @@ class _ForgotPasswordOtpScreenState extends State<ForgotPasswordOtpScreen> {
           appContext: context,
         ),
         const SizedBox(height: 48),
-        Visibility(
-          visible: !_otpScreenInProgress,
-          replacement: const CenterCircularProgressIndicator(),
-          child: ElevatedButton(
-            onPressed: _onTapNextButton,
-            child: const Icon(Icons.arrow_circle_right_outlined),
-          ),
-        ),
+        GetBuilder<ForgotPasswordOtpController>(builder: (controller) {
+          return Visibility(
+            visible: !controller.inProgress,
+            replacement: const CenterCircularProgressIndicator(),
+            child: ElevatedButton(
+              onPressed: _onTapNextButton,
+              child: const Icon(Icons.arrow_circle_right_outlined),
+            ),
+          );
+        }),
       ],
     );
   }
@@ -146,39 +149,21 @@ class _ForgotPasswordOtpScreenState extends State<ForgotPasswordOtpScreen> {
   }
 
   Future<void> _verifyOtp() async {
-    _otpScreenInProgress = true;
-    setState(() {});
-
     String otpContainer = _otpTEController.text;
+    final bool result = await _forGotPasswordOtpController.verifyOtp(
+        widget.mailAddress, otpContainer);
 
-    NetworkResponse response = await NetworkCaller.getRequest(
-        url: Urls.recoverVerifyOTP(widget.mailAddress, otpContainer));
-
-    _otpScreenInProgress = false;
-    setState(() {});
-
-    if (response.isSuccess) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ResetPasswordScreen(
-            mailContainer: widget.mailAddress,
-            otp: otpContainer,
-          ),
-        ),
-      );
+    if (result) {
+      Get.off(ResetPasswordScreen(
+          mailContainer: widget.mailAddress, otp: otpContainer));
     } else {
-      showSnackBarMessage(context, response.errorMessage, true);
+      showSnackBarMessage(
+          context, _forGotPasswordOtpController.errorMessage!, true);
     }
   }
 
   void _onTapSignIn() {
-    Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const SignInScreen(),
-        ),
-        (_) => false);
+    Get.offAllNamed(SignInScreen.name);
   }
 
   @override

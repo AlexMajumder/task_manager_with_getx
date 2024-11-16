@@ -1,7 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:task_manager/ui/controller/sign_in_controller.dart';
 import 'package:task_manager/ui/screen/forgot_password_email_screen.dart';
 import 'package:task_manager/ui/screen/main_bottom_nab_bar_screen.dart';
@@ -121,18 +120,16 @@ class _SignInScreenState extends State<SignInScreen> {
             },
           ),
           const SizedBox(height: 24),
-          GetBuilder<SignInController>(
-            builder: (controller) {
-              return Visibility(
-                visible: !controller.inProgress,
-                replacement: const CenterCircularProgressIndicator(),
-                child: ElevatedButton(
-                  onPressed: _onTapNextButton,
-                  child: const Icon(Icons.arrow_circle_right_outlined),
-                ),
-              );
-            }
-          ),
+          GetBuilder<SignInController>(builder: (controller) {
+            return Visibility(
+              visible: !controller.inProgress,
+              replacement: const CenterCircularProgressIndicator(),
+              child: ElevatedButton(
+                onPressed: _onTapNextButton,
+                child: const Icon(Icons.arrow_circle_right_outlined),
+              ),
+            );
+          }),
         ],
       ),
     );
@@ -162,28 +159,22 @@ class _SignInScreenState extends State<SignInScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-
     _signIn();
   }
 
   Future<void> _signIn() async {
-    final bool result = await singInController
-        .signIn(_emailTEController.text.trim(), _passwordTEController.text);
+    final bool result = await singInController.signIn(
+        _emailTEController.text.trim(), _passwordTEController.text);
 
     if (result) {
-     Get.offAllNamed(MainBottomNabBarScreen.name);
+      Get.offAllNamed(MainBottomNabBarScreen.name);
     } else {
       showSnackBarMessage(context, singInController.errorMessage!, true);
     }
   }
 
   void _onTapSignUp() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const SignUpScreen(),
-      ),
-    );
+    Get.toNamed(ForgotPasswordEmailScreen.name);
   }
 
   @override

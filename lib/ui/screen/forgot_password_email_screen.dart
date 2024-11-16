@@ -1,16 +1,19 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:task_manager/data/models/network_response.dart';
-import 'package:task_manager/data/services/network_caller.dart';
-import 'package:task_manager/data/utils/urls.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:task_manager/ui/screen/forgot_password_otp_screen.dart';
 import 'package:task_manager/ui/utils/app_colors.dart';
 import 'package:task_manager/ui/widgets/center_circular_progress_indicator.dart';
 import 'package:task_manager/ui/widgets/screen_background.dart';
 import 'package:task_manager/ui/widgets/snack_bar_message.dart';
 
+import '../controller/forgot_password_email_controller.dart';
+
 class ForgotPasswordEmailScreen extends StatefulWidget {
   const ForgotPasswordEmailScreen({super.key});
+
+  static const String name = '/forgotPasswordEmail';
 
   @override
   State<ForgotPasswordEmailScreen> createState() =>
@@ -20,8 +23,9 @@ class ForgotPasswordEmailScreen extends StatefulWidget {
 class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _mailTEController = TextEditingController();
-  bool _forgotPasswordMailInProgress = false;
   String mailAddressContainer = '';
+  final ForgotPasswordEmailController _forgotPasswordEmailController =
+      Get.find<ForgotPasswordEmailController>();
 
   @override
   Widget build(BuildContext context) {
@@ -88,14 +92,16 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
           controller: _mailTEController,
         ),
         const SizedBox(height: 48),
-        Visibility(
-          visible: !_forgotPasswordMailInProgress,
-          replacement: const CenterCircularProgressIndicator(),
-          child: ElevatedButton(
-            onPressed: _onTapNextButton,
-            child: const Icon(Icons.arrow_circle_right_outlined),
-          ),
-        ),
+        GetBuilder<ForgotPasswordEmailController>(builder: (controller) {
+          return Visibility(
+            visible: !controller.inProgress,
+            replacement: const CenterCircularProgressIndicator(),
+            child: ElevatedButton(
+              onPressed: _onTapNextButton,
+              child: const Icon(Icons.arrow_circle_right_outlined),
+            ),
+          );
+        }),
       ],
     );
   }
@@ -127,32 +133,21 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
   }
 
   Future<void> _recoverVerifyEmail() async {
-    _forgotPasswordMailInProgress = true;
-    setState(() {});
+    final bool result = await _forgotPasswordEmailController
+        .verifyEmailAddress(_mailTEController.text.trim());
 
-    NetworkResponse response = await NetworkCaller.getRequest(
-        url: Urls.recoverVerifyMail(_mailTEController.text.trim()));
-
-    _forgotPasswordMailInProgress = false;
-    setState(() {});
-
-    if (response.isSuccess) {
+    if (result) {
       mailAddressContainer = _mailTEController.text.trim();
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ForgotPasswordOtpScreen(
-            mailAddress: mailAddressContainer,
-          ),
-        ),
-      );
+
+      Get.off(ForgotPasswordOtpScreen(mailAddress: mailAddressContainer));
     } else {
-      showSnackBarMessage(context, response.errorMessage, true);
+      showSnackBarMessage(
+          context, _forgotPasswordEmailController.errorMessage!, true);
     }
   }
 
   void _onTapSignIn() {
-    Navigator.pop(context); // to Back previous Screen
+    Get.back(); // to Back previous Screen
   }
 
   @override

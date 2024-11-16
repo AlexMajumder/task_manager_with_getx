@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:task_manager/ui/controller/auth_controller.dart';
 import 'package:task_manager/ui/screen/profile_screen.dart';
 import 'package:task_manager/ui/screen/sign_in_screen.dart';
@@ -10,19 +12,16 @@ class TMAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.isProfileScreenOpen = false,
   });
 
-  final bool isProfileScreenOpen ;
+  final bool isProfileScreenOpen;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        if(isProfileScreenOpen == true){
+        if (isProfileScreenOpen == true) {
           return;
         }
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const ProfileScreen()),
-        );
+        Navigator.pushNamed(context, ProfileScreen.name);
       },
       child: AppBar(
         backgroundColor: AppColors.themeColor,
@@ -35,7 +34,7 @@ class TMAppBar extends StatelessWidget implements PreferredSizeWidget {
             const SizedBox(
               width: 16,
             ),
-             Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -55,14 +54,8 @@ class TMAppBar extends StatelessWidget implements PreferredSizeWidget {
             ),
             IconButton(
                 onPressed: () async {
-
                   await AuthController.clearUserData();
-
-                  Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const SignInScreen()),
-                      (value) => false);
+                  _onTapSingOutButton();
                 },
                 icon: const Icon(Icons.logout))
           ],
@@ -71,8 +64,11 @@ class TMAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
+  void _onTapSingOutButton() {
+    Get.offAllNamed(SignInScreen.name);
+  }
+
   @override
-  // TODO: implement preferredSize
-  Size get preferredSize =>
-      Size.fromHeight(kToolbarHeight); // for appbar or Tool ber proper size
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  // for appbar or Tool ber proper size
 }
